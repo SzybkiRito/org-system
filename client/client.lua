@@ -41,106 +41,150 @@ Citizen.CreateThread(function()
 			  		AddTextComponentString('Kliknij ~INPUT_PICKUP~ aby zarządzać swoją grupą')
 			  		DisplayHelpTextFromStringLabel(0, 0, 1, -1)
 				if IsControlJustPressed(1, 38) then
-					showPlayersMenu()
+					showManagementGroupMenu()
 				end
 			end
 		end
 	end
 end)
 
-function showPlayersMenu() 
+function showManagementGroupMenu() 
 	local elements = {}
 	ESX.TriggerServerCallback('org-system:getPlayers', function(cb) 
 
-		print(ESX.DumpTable(cb))
-
 		for k, v in ipairs(cb) do 
 			table.insert(elements, {
-				label = v.fullName
+				label = v.fullName,
+				identifier = v.identifier
 			})
 		end
 		
 		ESX.UI.Menu.Open(
-			'default', GetCurrentResourceName(), 'spawn_vehicle',
+			'default', GetCurrentResourceName(), 'manageGroup',
 			{
-				title    = 'Gracze',
+				title    = 'Zarządzaj grupą',
 				align    = 'top-left',
-				elements = elements,
+				elements = {
+					{label = 'Delete player from group', value = 'delete'},
+					{label = 'Add player to group', value = 'add'}
+				},
 			},
 			function(data, menu)
-				-- if (data.current.state == "notexist") then
-				-- 	menu.close()
-				-- else
-				-- 	TriggerEvent('esx:showNotification', 'Pojazd już jest na mapie')
-				-- end
-			end,
-			function(data, menu)
+				menu.close()
+
+				if data.current.value == 'delete' then
+					showDeletePlayersMenu(elements)
+				elseif data.current.value == 'add' then
+					showPlayersMenu()
+				end
+
+			end, function(data, menu)
 				menu.close()
 				--CurrentAction = 'open_garage_action'
 			end
 		)
-
 	end)
-
 end
 
-function getOwnedVehicles()
-	local elements, vehiclePropsList = {}, {}
-	local vehiclePos = {}
-	local exists = false
-
-	ESX.TriggerServerCallback('project_vehicles:getVehicles', function(result)
-
-		for k,v in ipairs(result) do
-			local vehicleProps = json.decode(v.vehicle)
-			vehiclePropsList[vehicleProps.plate] = vehicleProps
-			local vehicleHash = vehicleProps.model
-			local vehicleName = GetDisplayNameFromVehicleModel(vehicleHash)
-			local vehicleLabel
-
-			if (v.exist == "notexist") then
-				vehicleLabel = vehicleName.. ' ' .. v.plate .. ' Garage'
-			else
-				vehicleLabel = vehicleName.. ' ' .. v.plate .. ' Impound'
-			end
-
-			table.insert(elements, {
-				label = vehicleLabel,
-				state = v.exist,
-				x = tonumber(v.x),
-				y = tonumber(v.y),
-				z = tonumber(v.z),
-				engine = v.engine,
-				bodyHealth2 = v.bodyHealth,
-				heading = tonumber(v.heading),
-				color1 = v.color_1,
-				color2 = v.color_2,
-				plate = vehicleProps.plate
-			})
-		end
-
-		ESX.UI.Menu.Open(
-		'default', GetCurrentResourceName(), 'spawn_vehicle',
+function showDeletePlayersMenu(elements) 
+	ESX.UI.Menu.Open(
+		'default', GetCurrentResourceName(), 'listPlayers',
 		{
-			title    = 'Garage',
+			title    = 'Gracze',
 			align    = 'top-left',
 			elements = elements,
 		},
 		function(data, menu)
-			if (data.current.state == "notexist") then
-				menu.close()
-				local vehicleProps = vehiclePropsList[data.current.plate]
-				vehicleProps["engineHealth"] = data.current.engine + 0.0
-				-- vehicleProps["bodyHealth"] = bodyHealth2
-				SpawnVehicle(vehicleProps, data.current.x, data.current.y, data.current.z, data.current.heading, data.current.engine, data.current.bodyHealth2, data.current.color1, data.current.color2)
-			else
-				TriggerEvent('esx:showNotification', 'Pojazd już jest na mapie')
-			end
+			ESX.UI.Menu.Open(
+				'default', GetCurrentResourceName(), 'delete',
+				{
+					title    = 'Gracze',
+					align    = 'top-left',
+					elements = {
+						{label = 'Tak', value = 'yes'},
+						{label = 'Nie', value = 'no'}
+					},
+				},
+				function(data2, menu2)
+					menu2.close()
+
+					if data2.current.value == 'yes' then
+						TriggerServerEvent('org-system:deletePlayerFromGroup', data.current.identifier)
+						Config.GroupName = nil
+						Config.playerRank = nil
+					elseif data2.current.value == 'no' then
+						menu2.cancel()
+					end
+
+				end, function(data, menu)
+					--menu2.close()
+					--CurrentAction = 'open_garage_action'
+				end
+			)
 		end,
 		function(data, menu)
 			menu.close()
 			--CurrentAction = 'open_garage_action'
 		end
 	)
-	end)
 end
+
+function showPlayersMenu() 
+	local elements = {}
+    local players = ESX.Game.GetPlayers()
+
+    for k, v in ipairs(players) do
+		local playerData = ESX.GetPlayerData(v)
+        table.insert(elements, {
+			label = GetPlayerName(v),
+			identifier = playerData.identifier
+		})
+    end
+
+	ESX.UI.Menu.Open(
+		'default', GetCurrentResourceName(), 'listPlayers',
+		{
+			title    = 'Gracze',
+			align    = 'top-left',
+			elements = elements,
+		},
+		function(data, menu)
+			ESX.UI.Menu.Open(
+				'default', GetCurrentResourceName(), 'delete',
+				{
+					title    = 'Usunąć gracza?',
+					align    = 'top-left',
+					elements = {
+						{label = 'Tak', value = 'yes'},
+						{label = 'Nie', value = 'no'}
+					},
+				},
+				function(data2, menu2)
+					menu2.close()
+
+					if data2.current.value == 'yes' then
+						TriggerServerEvent('org-system:addPlayerToGroup', data2.current.identifier, Config.GroupName, 0)
+					elseif data2.current.value == 'no' then
+						menu2.cancel()
+					end
+
+				end, function(data, menu)
+					--menu2.close()
+					--CurrentAction = 'open_garage_action'
+				end
+			)
+		end,
+		function(data, menu)
+			menu.close()
+			--CurrentAction = 'open_garage_action'
+		end
+	)
+end
+
+RegisterCommand('asd', function() 
+	local players = ESX.Game.GetPlayers()
+
+	for k,v in ipairs(players) do
+		
+	end
+end)

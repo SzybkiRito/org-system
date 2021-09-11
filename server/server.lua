@@ -69,6 +69,14 @@ function addPlayerToGroup(identifier, org_name, rank, characterName)
     end)
 end
 
+function deletePlayerFromGroup(identifier) 
+    if identifier == nil then return end
+
+    MySQL.Async.fetchAll('DELETE FROM orgmembers WHERE identifier = @identifier', {
+     ['@identifier'] = identifier   
+    })
+end
+
 ESX.RegisterServerCallback('org-system:getPlayers', function(source, cb) 
     local xPlayer = ESX.GetPlayerFromId(source)
     local identifier = xPlayer.identifier
@@ -78,15 +86,18 @@ ESX.RegisterServerCallback('org-system:getPlayers', function(source, cb)
             MySQL.Async.fetchAll('SELECT * FROM orgmembers WHERE org_name = @orgName', {
                 ['@orgName'] = data
             }, function(result)
-                local members = {}
+                if isTableEmpty(result) == false then
+                    local members = {}
 
-                for i=1, #result, 1 do
-                    table.insert(members, {
-                        fullName = result[i].characterName
-                    })
+                    for i=1, #result, 1 do
+                        table.insert(members, {
+                            fullName = result[i].characterName,
+                            identifier = result[1].identifier
+                        })
+                    end
+    
+                    cb(members)
                 end
-
-                cb(members)
 
             end)
         end
@@ -106,10 +117,25 @@ ESX.RegisterServerCallback('org-system:isPlayerInGroup', function(src, cb)
     MySQL.Async.fetchAll("SELECT org_name, rank FROM orgmembers WHERE identifier = @identifier", {
         ['@identifier'] = identifier
     }, function(result)
-        playerGroup.groupName = result[1].org_name
-        playerGroup.playerRank = result[1].rank
-        cb(playerGroup)
+        if isTableEmpty(result) == false then
+            playerGroup.groupName = result[1].org_name
+            playerGroup.playerRank = result[1].rank
+            cb(playerGroup)
+        end
     end)
+end)
+
+RegisterServerEvent('org-system:deletePlayerFromGroup')
+AddEventHandler('org-system:deletePlayerFromGroup', function(identifier) 
+    deletePlayerFromGroup(identifier)
+end)
+
+RegisterServerEvent('org-system:addPlayerToGroup')
+AddEventHandler('org-system:addPlayerToGroup', function(identifer, group, rank)
+    local xPlayer = ESx.GetPlayerFromIdentifier(identifier)
+    local fullName = xPlayer.getName()
+
+    addPlayerToGroup(identifier, group, tonumber(rank), fullName)
 end)
 
 RegisterCommand('createGroup', function(source, args) 
@@ -118,21 +144,12 @@ end)
 
 RegisterCommand('addPlayer', function(source, args) 
     local _source = source
-    local xPlayer = ESX.GetPlayerFromId(_source)
+    local xPlayer = ESX.GetPlayerFromId(args[1])
     local fullName = xPlayer.getName()
 
-    -- ADD ID TO ADD SPECIFIC PLAYER!
-
-    addPlayerToGroup(xPlayer.identifier, args[1], tonumber(args[2]), fullName)
-end)
-
-RegisterCommand('asd', function(source, args) 
-    local _source = source
-    local xPlayer = ESX.GetPlayerFromId(_source)
-
-    xPlayer.getPlayerGroup(xPlayer.identifier, function(data) 
-        if data then
-            chuj = data
-        end
-    end)
+    if xPlayer then
+        addPlayerToGroup(xPlayer.identifier, args[2], tonumber(args[3]), fullName)
+    else
+        print('player is not online')
+    end
 end)

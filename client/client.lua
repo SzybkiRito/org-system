@@ -16,7 +16,7 @@ Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(1000)
 		ESX.TriggerServerCallback('org-system:isPlayerInGroup', function(cb) 
-			print('Getting Group from a player')
+			-- print('Getting Group from a player')
 			--print(ESX.DumpTable(cb))
 			Config.GroupName = cb.groupName
 			Config.playerRank = cb.playerRank
@@ -51,18 +51,14 @@ end)
 function showPlayersMenu() 
 	local elements = {}
 	ESX.TriggerServerCallback('org-system:getPlayers', function(cb) 
-		print(ESX.DumpTable(cb))
-		table.insert(elements, {
-			label = cb
-		})
-		--		print(ESX.DumpTable(cb))
-		-- for k, v in ipairs(cb) do
-		-- 	table.insert(elements, {
-		-- 		label = v.identifier
-		-- 	})
-		-- end
 
-		print(ESX.DumpTable(players))
+		print(ESX.DumpTable(cb))
+
+		for k, v in ipairs(cb) do 
+			table.insert(elements, {
+				label = v.fullName
+			})
+		end
 		
 		ESX.UI.Menu.Open(
 			'default', GetCurrentResourceName(), 'spawn_vehicle',

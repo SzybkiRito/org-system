@@ -31,7 +31,7 @@ function createGroup(org_name)
     end)
 end
 
-function addPlayerToGroup(identifier, org_name, rank)
+function addPlayerToGroup(identifier, org_name, rank, characterName)
     if identifier == nil or org_name == nil or rank == nil then return end
 
     MySQL.Async.fetchAll('SELECT org_name FROM organizations WHERE org_name = @org_name', {
@@ -45,18 +45,20 @@ function addPlayerToGroup(identifier, org_name, rank)
                     if result[1].identifier == identifier then
                         print('Player is already in a group')
                     else
-                        MySQL.Async.execute("INSERT INTO orgmembers(identifier, org_name, rank) VALUES(@identifier, @org_name, @rank)", {
+                        MySQL.Async.execute("INSERT INTO orgmembers(identifier, org_name, rank, characterName) VALUES(@identifier, @org_name, @rank, @characterName)", {
                             ['@identifier'] = identifier, 
                             ['@org_name'] = org_name,
-                            ['@rank'] = rank
+                            ['@rank'] = rank,
+                            ['@characterName'] = characterName
                         })
                         print('Player added to organization')
                     end
                 else
-                    MySQL.Async.execute("INSERT INTO orgmembers(identifier, org_name, rank) VALUES(@identifier, @org_name, @rank)", {
+                    MySQL.Async.execute("INSERT INTO orgmembers(identifier, org_name, rank, characterName) VALUES(@identifier, @org_name, @rank, @characterName)", {
                         ['@identifier'] = identifier, 
                         ['@org_name'] = org_name,
-                        ['@rank'] = rank
+                        ['@rank'] = rank,
+                        ['@characterName'] = characterName
                     })
                     print('Player added to organization')
                 end
@@ -67,37 +69,25 @@ function addPlayerToGroup(identifier, org_name, rank)
     end)
 end
 
-function identiferToCharacterName(identifier, callback) 
-    MySQL.Async.fetchAll('SELECT firstname, lastname FROM users WHERE identifier = @identifier', {
-        ['@identifier'] = identifier  
-    }, function(result) 
-        local fullName = {
-            firstname = result[1].firstname,
-            lastname = result[1].lastname
-        }
-        callback(fullName)
-    end)
-end
-
 ESX.RegisterServerCallback('org-system:getPlayers', function(source, cb) 
     local xPlayer = ESX.GetPlayerFromId(source)
     local identifier = xPlayer.identifier
-    local fullName = nil
     
     xPlayer.getPlayerGroup(xPlayer.identifier, function(data) 
         if data then
             MySQL.Async.fetchAll('SELECT * FROM orgmembers WHERE org_name = @orgName', {
                 ['@orgName'] = data
             }, function(result)
-                for k, v in ipairs(result) do
-                    identiferToCharacterName(v.identifier, function(data) 
-                         fullName = string.format("%s %s", data.firstname, data.lastname)
-                    end)
+                local members = {}
+
+                for i=1, #result, 1 do
+                    table.insert(members, {
+                        fullName = result[i].characterName
+                    })
                 end
-                -- identiferToCharacterName(result[1].identifier, function(data) 
-                --     local fullName = string.format("%s %s", data.firstname, data.lastname)
-                --     cb(fullName)
-                -- end)
+
+                cb(members)
+
             end)
         end
     end)
@@ -129,8 +119,11 @@ end)
 RegisterCommand('addPlayer', function(source, args) 
     local _source = source
     local xPlayer = ESX.GetPlayerFromId(_source)
+    local fullName = xPlayer.getName()
 
-    addPlayerToGroup(xPlayer.identifier, args[1], tonumber(args[2]))
+    -- ADD ID TO ADD SPECIFIC PLAYER!
+
+    addPlayerToGroup(xPlayer.identifier, args[1], tonumber(args[2]), fullName)
 end)
 
 RegisterCommand('asd', function(source, args) 

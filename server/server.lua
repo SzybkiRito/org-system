@@ -77,6 +77,57 @@ function deletePlayerFromGroup(identifier)
     })
 end
 
+function has_value (tab, val)
+    for index, value in ipairs(tab) do
+        if value == val then
+            return true
+        end
+    end
+
+    return false
+end
+
+function createMarker(orgname, markerName, x, y, z) 
+
+    local possibleMarkerNames = {
+        'stash',
+        'management'
+    }
+
+    if orgname == nil or markerName == nil or x == nil then return end
+
+    if has_value(possibleMarkerNames, markerName) then
+        MySQL.Async.execute('INSERT INTO org_markers(org_name, markerName, x, y, z) VALUES(@orgname, @markerName, @x, @y, @z)', {
+            ['@orgname'] = orgname,
+            ['@markerName'] = markerName,
+            ['@vector3Marker'] = vector3Marker,
+            ['@x'] = x,
+            ['@y'] = y,
+            ['@z'] = z
+        }) 
+    else
+        print('Nie można utworzyć takiego markera')
+    end
+end
+
+ESX.RegisterServerCallback('org-system:getMarkers', function(source, cb) 
+    local xPlayer = ESX.GetPlayerFromId(source)
+    local identifier = xPlayer.identifier
+    
+    MySQL.Async.fetchAll("SELECT org_name, rank FROM orgmembers WHERE identifier = @identifier", {
+        ['@identifier'] = identifier
+    }, function(result) 
+        if isTableEmpty(result) == false then
+        local orgName = result[1].org_name
+        MySQL.Async.fetchAll('SELECT * FROM org_markers WHERE org_name = @orgName', { ['@orgName'] = orgName}, function(result) 
+            if isTableEmpty(result) == false then
+                cb(result)
+            end
+        end)
+      end
+    end)
+end)
+
 ESX.RegisterServerCallback('org-system:getPlayers', function(source, cb) 
     local xPlayer = ESX.GetPlayerFromId(source)
     local identifier = xPlayer.identifier
@@ -138,6 +189,8 @@ AddEventHandler('org-system:addPlayerToGroup', function(identifer, group, rank)
     addPlayerToGroup(identifier, group, tonumber(rank), fullName)
 end)
 
+-- COMMANDS
+
 RegisterCommand('createGroup', function(source, args) 
     createGroup(args[1])
 end)
@@ -152,4 +205,21 @@ RegisterCommand('addPlayer', function(source, args)
     else
         print('player is not online')
     end
+end)
+
+
+--[[ 
+    @params(
+        orgName,
+        markerName,
+        vector3Marker
+    )    
+--]]
+
+RegisterCommand('createMarker', function(source, args) 
+    local ped = GetPlayerPed(source)
+    local playerCoords = GetEntityCoords(ped)
+    xx, yy, zz = table.unpack(playerCoords)
+
+    createMarker(args[1], args[2], xx, yy, zz)
 end)

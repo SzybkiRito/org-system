@@ -11,40 +11,70 @@ Citizen.CreateThread(function()
 	end
 end)
 --END ESX
+local markers = {}
 
 Citizen.CreateThread(function() 
 	while true do
-		Citizen.Wait(1000)
+		Citizen.Wait(60000)
+		
 		ESX.TriggerServerCallback('org-system:isPlayerInGroup', function(cb) 
 			-- print('Getting Group from a player')
 			--print(ESX.DumpTable(cb))
 			Config.GroupName = cb.groupName
 			Config.playerRank = cb.playerRank
 		end)
+
+		ESX.TriggerServerCallback('org-system:getMarkers', function(cb)
+			markers = cb
+		end)
 	end
 end)
 
 Citizen.CreateThread(function() 
 	while true do
-		Citizen.Wait(1)	
-			if Config.GroupName ~= nil and Config.playerRank == 1 then
-				local coords = GetEntityCoords(PlayerPedId())
-				local markerCoords = vector3(-26.22, -1447.91, 30.63-0.95)
-				local distance = Vdist(vector3(coords), markerCoords)
+		Citizen.Wait(0)	
+			-- if Config.GroupName ~= nil and Config.playerRank == 1 then
+			-- 	local coords = GetEntityCoords(PlayerPedId())
+			-- 	local markerCoords = vector3(-26.22, -1447.91, 30.63-0.95)
+			-- 	local distance = Vdist(vector3(coords), markerCoords)
   
-				if distance < 10 then
-			  		DrawMarker(27, markerCoords, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 1.0, 1.0, 1.0, 217, 219, 61, 100, false, true, 2, true, false, false, false)
-				end
+			-- 	if distance < 10 then
+			--   		DrawMarker(27, markerCoords, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 1.0, 1.0, 1.0, 217, 219, 61, 100, false, true, 2, true, false, false, false)
+			-- 	end
   
-				if distance < 1.2 then
-			 		SetTextComponentFormat('STRING')
-			  		AddTextComponentString('Kliknij ~INPUT_PICKUP~ aby zarządzać swoją grupą')
-			  		DisplayHelpTextFromStringLabel(0, 0, 1, -1)
-				if IsControlJustPressed(1, 38) then
-					showManagementGroupMenu()
+			-- 	if distance < 1.2 then
+			--  		SetTextComponentFormat('STRING')
+			--   		AddTextComponentString('Kliknij ~INPUT_PICKUP~ aby zarządzać swoją grupą')
+			--   		DisplayHelpTextFromStringLabel(0, 0, 1, -1)
+			-- 	if IsControlJustPressed(1, 38) then
+			-- 		showManagementGroupMenu()
+			-- 	end
+			-- end
+		-- end
+
+		for k, v in ipairs(markers) do 
+			if Config.GroupName == v.org_name and Config.playerRank == 1 then
+				if v.x ~= nil then
+
+					local x, y, z = table.unpack(GetEntityCoords(PlayerPedId()))
+					local distance = Vdist(x, y, z, tonumber(v.x), tonumber(v.y), tonumber(v.z))
+
+					if distance < 10 then
+			  			DrawMarker(27, tonumber(v.x), tonumber(v.y), tonumber(v.z)-0.95, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 1.0, 1.0, 1.0, 217, 219, 61, 100, false, true, 2, true, false, false, false)
+					end
+
+					if v.markerName == 'management' and distance < 1.2 then
+			 			SetTextComponentFormat('STRING')
+			  			AddTextComponentString('Kliknij ~INPUT_PICKUP~ aby zarządzać swoją grupą')
+			  			DisplayHelpTextFromStringLabel(0, 0, 1, -1)
+						if IsControlJustPressed(1, 38) then
+							showManagementGroupMenu()
+						end
+					end
 				end
 			end
 		end
+
 	end
 end)
 
@@ -131,7 +161,7 @@ end
 
 function showPlayersMenu() 
 	local elements = {}
-    local players = ESX.Game.GetPlayers()
+    local players = ESX.Game.GetPlayers(true)
 
     for k, v in ipairs(players) do
 		local playerData = ESX.GetPlayerData(v)
@@ -169,7 +199,7 @@ function showPlayersMenu()
 					end
 
 				end, function(data, menu)
-					--menu2.close()
+					menu.close( )
 					--CurrentAction = 'open_garage_action'
 				end
 			)
@@ -182,9 +212,5 @@ function showPlayersMenu()
 end
 
 RegisterCommand('asd', function() 
-	local players = ESX.Game.GetPlayers()
 
-	for k,v in ipairs(players) do
-		
-	end
 end)

@@ -4,7 +4,7 @@ This is group system based on ESX Framework which allows you to add some activit
 
 **Commands**
 
-*RANK = 0/1*
+*RANK = 0/1* <br/>
 *MarkerType = management/stash*
 
 * /createGroup Group_Name
@@ -18,7 +18,6 @@ This is group system based on ESX Framework which allows you to add some activit
 **Install**
 
     * 1. Add to es_extended/server/clases/player.lua *
-    *
     	self.getPlayerGroup = function(identifier, callback) 
 		    MySQL.Async.fetchAll("SELECT org_name FROM orgmembers WHERE identifier = @identifier", {
 			    ['@identifier'] = identifier
@@ -26,7 +25,6 @@ This is group system based on ESX Framework which allows you to add some activit
 				    callback(result[1].org_name)
 		    end)
 	    end
-    *
 
 ## TODO 
 

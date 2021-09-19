@@ -2,6 +2,12 @@ Config = {}
 
 Config.GroupName = nil -- DO NOT TOUCh 
 Config.playerRank = nil
+Config.TimeOut = 1000 -- MARKERS REFRESHING IN MS
+
+Config.possibleMarkerNames = {
+    'stash',
+    'management'
+}
 
 -- CORNERS
 Config.LowDrugs = {
@@ -20,3 +26,4 @@ Config.RareDrugs = {
     { drug = 'meth_pooch', price = 65, price2 = 90 }, -- META
 }
 -- END CORNERS
+

@@ -24,9 +24,21 @@ function createGroup(org_name)
             MySQL.Async.execute("INSERT INTO organizations(org_name) VALUES(@org_name)", {
                 ['@org_name'] = org_name
             })
-            print('SHOW A NOTIFICATION HERE') -- SUCESFULLY CREATED
+            TriggerClientEvent("pNotify:SendNotification", -1, {
+                text = "You sucessfully created a group",
+                type = "success",
+                queue = "lmao",
+                timeout = 10000,
+                layout = "centerRight"
+            }) -- SUCESFULLY CREATED
         else
-            print('SHOW A NOTIFICATION HERE -- ERROR') -- ORG ALREADY EXISTS
+            TriggerClientEvent("pNotify:SendNotification", -1, {
+                text = "Group already exists",
+                type = "error",
+                queue = "lmao",
+                timeout = 10000,
+                layout = "centerRight"
+            }) -- ORG ALREADY EXISTS
         end
     end)
 end
@@ -43,7 +55,13 @@ function addPlayerToGroup(identifier, org_name, rank, characterName)
             }, function(result) 
                 if isTableEmpty(result) == false then
                     if result[1].identifier == identifier then
-                        print('Player is already in a group')
+                        TriggerClientEvent("pNotify:SendNotification", -1, {
+                            text = "Player already is in a group",
+                            type = "error",
+                            queue = "lmao",
+                            timeout = 10000,
+                            layout = "centerRight"
+                        })
                     else
                         MySQL.Async.execute("INSERT INTO orgmembers(identifier, org_name, rank, characterName) VALUES(@identifier, @org_name, @rank, @characterName)", {
                             ['@identifier'] = identifier, 
@@ -51,7 +69,13 @@ function addPlayerToGroup(identifier, org_name, rank, characterName)
                             ['@rank'] = rank,
                             ['@characterName'] = characterName
                         })
-                        print('Player added to organization')
+                        TriggerClientEvent("pNotify:SendNotification", -1, {
+                            text = "Player have been add to your group",
+                            type = "success",
+                            queue = "lmao",
+                            timeout = 10000,
+                            layout = "centerRight"
+                        }) 
                     end
                 else
                     MySQL.Async.execute("INSERT INTO orgmembers(identifier, org_name, rank, characterName) VALUES(@identifier, @org_name, @rank, @characterName)", {
@@ -60,11 +84,23 @@ function addPlayerToGroup(identifier, org_name, rank, characterName)
                         ['@rank'] = rank,
                         ['@characterName'] = characterName
                     })
-                    print('Player added to organization')
+                    TriggerClientEvent("pNotify:SendNotification", -1, {
+                        text = "Player have been add to your group",
+                        type = "success",
+                        queue = "lmao",
+                        timeout = 10000,
+                        layout = "centerRight"
+                    }) 
                 end
             end) 
         else
-            print('Nie ma takiej grupy')
+            TriggerClientEvent("pNotify:SendNotification", -1, {
+                text = "This group do not exists",
+                type = "error",
+                queue = "lmao",
+                timeout = 10000,
+                layout = "centerRight"
+            })
         end
     end)
 end
@@ -88,15 +124,9 @@ function has_value (tab, val)
 end
 
 function createMarker(orgname, markerName, x, y, z) 
-
-    local possibleMarkerNames = {
-        'stash',
-        'management'
-    }
-
     if orgname == nil or markerName == nil or x == nil then return end
 
-    if has_value(possibleMarkerNames, markerName) then
+    if has_value(Config.possibleMarkerNames, markerName) then
         MySQL.Async.execute('INSERT INTO org_markers(org_name, markerName, x, y, z) VALUES(@orgname, @markerName, @x, @y, @z)', {
             ['@orgname'] = orgname,
             ['@markerName'] = markerName,
@@ -106,7 +136,13 @@ function createMarker(orgname, markerName, x, y, z)
             ['@z'] = z
         }) 
     else
-        print('Nie można utworzyć takiego markera')
+        TriggerClientEvent("pNotify:SendNotification", -1, {
+            text = "Wrong type of marker",
+            type = "error",
+            queue = "lmao",
+            timeout = 10000,
+            layout = "centerRight"
+        })
     end
 end
 
@@ -203,7 +239,13 @@ RegisterCommand('addPlayer', function(source, args)
     if xPlayer then
         addPlayerToGroup(xPlayer.identifier, args[2], tonumber(args[3]), fullName)
     else
-        print('player is not online')
+        TriggerClientEvent("pNotify:SendNotification", -1, {
+            text = "Player have to be online",
+            type = "error",
+            queue = "lmao",
+            timeout = 10000,
+            layout = "centerRight"
+        })
     end
 end)
 

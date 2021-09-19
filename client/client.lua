@@ -15,7 +15,7 @@ local markers = {}
 
 Citizen.CreateThread(function() 
 	while true do
-		Citizen.Wait(60000)
+		Citizen.Wait(Config.TimeOut)
 		
 		ESX.TriggerServerCallback('org-system:isPlayerInGroup', function(cb) 
 			-- print('Getting Group from a player')
@@ -33,6 +33,11 @@ end)
 Citizen.CreateThread(function() 
 	while true do
 		Citizen.Wait(0)	
+
+			TriggerEvent('chat:addSuggestion', '/createMarker', '/createMarker GroupName MarkerType')
+			TriggerEvent('chat:addSuggestion', '/addPlayer', '/addPlayer ID GroupName Rank')
+			TriggerEvent('chat:addSuggestion', '/createGroup', '/createGroup GroupName')
+
 			-- if Config.GroupName ~= nil and Config.playerRank == 1 then
 			-- 	local coords = GetEntityCoords(PlayerPedId())
 			-- 	local markerCoords = vector3(-26.22, -1447.91, 30.63-0.95)
@@ -142,6 +147,7 @@ function showDeletePlayersMenu(elements)
 						TriggerServerEvent('org-system:deletePlayerFromGroup', data.current.identifier)
 						Config.GroupName = nil
 						Config.playerRank = nil
+						exports.pNotify:SendNotification({text = "Player have been removed from the group", type = "success", timeout = 1000})
 					elseif data2.current.value == 'no' then
 						menu2.cancel()
 					end
@@ -194,6 +200,7 @@ function showPlayersMenu()
 
 					if data2.current.value == 'yes' then
 						TriggerServerEvent('org-system:addPlayerToGroup', data2.current.identifier, Config.GroupName, 0)
+						exports.pNotify:SendNotification({text = "Player have been succesfully added to your group", type = "success", timeout = 1000})
 					elseif data2.current.value == 'no' then
 						menu2.cancel()
 					end
@@ -210,7 +217,3 @@ function showPlayersMenu()
 		end
 	)
 end
-
-RegisterCommand('asd', function() 
-
-end)
